@@ -1,0 +1,126 @@
+<div class="p-4 max-w-4xl mx-auto">
+  <h1 class="text-2xl font-bold mb-4">Icon Team Organizer</h1>
+
+  <div class="mb-4">
+    <label>
+      <input type="checkbox" [(ngModel)]="persistData" (change)="togglePersistence()">
+      Persist data across page refreshes
+    </label>
+  </div>
+
+  <div class="mb-4">
+    <label class="block mb-2">
+      <span class="sr-only">Choose icons</span>
+      <input type="file" multiple accept="image/*" (change)="handleIconUpload($event)" class="block w-full text-sm text-gray-500
+        file:mr-4 file:py-2 file:px-4
+        file:rounded-full file:border-0
+        file:text-sm file:font-semibold
+        file:bg-blue-50 file:text-blue-700
+        hover:file:bg-blue-100" />
+    </label>
+  </div>
+
+  <div class="mb-4 flex items-center">
+    <input type="text" [(ngModel)]="newTeamName" placeholder="New team name"
+      class="mr-2 p-2 border rounded flex-grow" />
+    <input type="color" [(ngModel)]="newTeamColor" class="mr-2" />
+    <button (click)="createTeam()" class="bg-blue-500 text-white p-2 rounded">
+      <i class="fas fa-plus"></i>
+    </button>
+  </div>
+
+  <div class="space-y-4">
+    <div *ngFor="let team of teams" class="border p-4 rounded">
+      <div class="flex justify-between items-center mb-2">
+        <h2 class="text-xl font-semibold" [style.color]="team.color">{{team.name}}</h2>
+        <div class="flex items-center">
+          <label [for]="'teamColor' + team.id" class="mr-2">Team Color:</label>
+          <input type="color" [id]="'teamColor' + team.id" [value]="team.color"
+            (change)="updateTeamColor(team.id, $event)" class="w-8 h-8 border-none">
+        </div>
+      </div>
+      <div *ngFor="let section of team.sections" class="mb-4">
+        <div class="flex justify-between items-center mb-2">
+          <h3 class="text-lg font-medium">{{section.name}}</h3>
+          <button (click)="removeSection(team.id, section.id)" class="text-red-500">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+        <div *ngFor="let row of section.rows" class="example-list" cdkDropList cdkDropListOrientation="horizontal"
+          [cdkDropListData]="row.content" [id]="team.id + '-' + section.id + '-' + row.id"
+          [cdkDropListConnectedTo]="getConnectedLists()" (cdkDropListDropped)="drop($event)"
+          [class.selected-row]="selectedRow && selectedRow.teamId === team.id && selectedRow.sectionId === section.id && selectedRow.rowId === row.id"
+          (click)="selectRow(team.id, section.id, row.id)" (dblclick)="editRowContent(team.id, section.id, row.id)"
+          (contextmenu)="openSearchModal($event, team.id, section.id, row.id)">
+          <div *ngFor="let item of row.content" cdkDrag class="example-box">
+            <ng-container *ngIf="isIcon(item); else textContent">
+              <img [src]="getIconData(item)" [alt]="getIconName(item)" class="w-8 h-8 object-cover" />
+            </ng-container>
+            <ng-template #textContent>
+              <span class="text-item">{{item}}</span>
+            </ng-template>
+          </div>
+        </div>
+        <div class="flex space-x-2 mt-2">
+          <button (click)="addRowToSection(team.id, section.id)"
+            class="bg-green-500 text-white px-2 py-1 rounded text-sm">
+            Add Row
+          </button>
+          <button (click)="removeRowFromSection(team.id, section.id)"
+            class="bg-red-500 text-white px-2 py-1 rounded text-sm">
+            Remove Row
+          </button>
+        </div>
+      </div>
+      <div class="mt-2 flex items-center">
+        <input type="text" [(ngModel)]="newSectionName" placeholder="New section name"
+          class="mr-2 p-2 border rounded flex-grow" />
+        <button (click)="addSection(team.id)" class="bg-blue-500 text-white p-2 rounded">
+          Add Section
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-4">
+    <h2 class="text-xl font-semibold mb-2">Available Icons</h2>
+    <button (click)="toggleDeleteMode()" class="mb-2 bg-red-500 text-white p-2 rounded"
+      [class.bg-green-500]="isDeleteMode">
+      {{isDeleteMode ? 'Exit Delete Mode' : 'Enter Delete Mode'}}
+    </button>
+    <div class="flex flex-wrap gap-2 border p-2 rounded">
+      <div *ngFor="let icon of icons" class="relative group cursor-pointer"
+        (click)="isDeleteMode ? removeIcon(icon.id) : addIconToSelectedRow(icon)">
+        <img [src]="icon.data" [alt]="icon.name" class="w-10 h-10 object-cover" />
+        <div *ngIf="isDeleteMode" class="absolute inset-0 bg-red-500 bg-opacity-50 flex items-center justify-center">
+          <i class="fas fa-trash text-white"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-4 flex space-x-2">
+    <button (click)="addTextToSelectedRow()" class="bg-blue-500 text-white p-2 rounded flex items-center">
+      <i class="fas fa-font mr-1"></i> Add Text
+    </button>
+    <button (click)="clearRow()" class="bg-yellow-500 text-white p-2 rounded flex items-center">
+      <i class="fas fa-eraser mr-1"></i> Clear Row
+    </button>
+    <button (click)="resetAllSections()" class="bg-red-500 text-white p-2 rounded flex items-center">
+      <i class="fas fa-redo mr-1"></i> Reset All
+    </button>
+  </div>
+
+  <div #searchModal class="search-modal" style="display: none;">
+    <div class="search-content">
+      <input [(ngModel)]="searchTerm" (input)="searchIcons()" placeholder="Search icons...">
+      <div class="search-results">
+        <div *ngFor="let icon of searchResults" (click)="addSearchResultToRow(icon)" class="search-result-item">
+          <img [src]="icon.data" [alt]="icon.name" class="w-6 h-6 object-cover">
+          <span>{{icon.name}}</span>
+        </div>
+      </div>
+      <button (click)="closeSearchModal()">Close</button>
+    </div>
+  </div>
+</div>

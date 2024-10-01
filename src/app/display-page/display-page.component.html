@@ -1,0 +1,24 @@
+<div class="grid grid-cols-4 gap-4 p-4">
+    <div *ngFor="let team of teams" class="border p-2 rounded text-sm">
+      <h3 class="font-bold text-base" [style.color]="team.color">{{team.name}}</h3>
+      <div *ngFor="let section of team.sections" class="mt-1">
+        <h4 class="font-semibold">{{section.name}}</h4>
+        <div *ngFor="let row of section.rows" class="flex flex-wrap items-center gap-1">
+          <ng-container *ngFor="let item of row.content">
+            <img *ngIf="isIcon(item)" [src]="item.data" [alt]="item.name" class="w-6 h-6 object-cover">
+            <span *ngIf="!isIcon(item)" class="bg-gray-200 px-1 rounded text-xs">{{item}}</span>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="mt-4 p-4">
+    <h2 class="text-lg font-semibold mb-2">Icon Usage Count</h2>
+    <div class="grid grid-cols-8 gap-2 text-sm">
+      <div *ngFor="let icon of icons" class="flex items-center space-x-1">
+        <img [src]="icon.data" [alt]="icon.name" class="w-6 h-6 object-cover">
+        <span>{{calculateIconUsage()[icon.id] || 0}}</span>
+      </div>
+    </div>
+  </div>
